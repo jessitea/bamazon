@@ -18,6 +18,7 @@ var connection = mysql.createConnection({
   database: "bamazon_DB"
 });
 
+// Welcome title
 console.log("");
 console.log("============================");
 console.log("======== WELCOME TO ========");
@@ -27,8 +28,12 @@ console.log("");
 console.log("");
 console.log("What would you like to do?");
 
+// Calls program to start when file is loaded
 startProgram();
 
+/////////////////////////////////////////
+//    Function to view start menu     //
+///////////////////////////////////////
 function startProgram() {
 inquirer.prompt(
 	{
@@ -50,8 +55,11 @@ inquirer.prompt(
 })
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// Function shows all items (without quanitity) then calls function to place an order //
+///////////////////////////////////////////////////////////////////////////////////////
 function customerView() {
-// Displays all items in inventory
+
 connection.query("SELECT * FROM products", function(err, res){
 	if (err) throw err;
 
@@ -61,23 +69,27 @@ connection.query("SELECT * FROM products", function(err, res){
 		console.log("");
 
 		for (var i = 0; i < res.length; i++) {
+
 			console.log("==========");
 			console.log("Item ID: " + res[i].item_id);
 			console.log("Product Name: " + res[i].product_name);
-			console.log("Price (per unit): $" + res[i].price);
+			console.log("Price (per unit): $" + (res[i].price).toFixed(2));
 			console.log("==========");
 
 		}
 
 		console.log("==== END OF LIST ====");
+
+
 		orderItem();
 
-})
+	})
 }	
 
 
-
-
+/////////////////////////////////
+// Function to place an order //
+///////////////////////////////
 function orderItem() {
 
 	console.log("");
@@ -85,90 +97,104 @@ function orderItem() {
 	console.log("Please place your order by entering the information below:");
 	console.log("");
 
-inquirer.prompt([
+		// Prompts user for info to order
+		inquirer.prompt([
 
-	{
-		name: "id",
-		message: "Item ID#: ",
-		validate: function(input){
+			{
+				name: "id",
+				message: "Item ID#: ",
+				validate: function(input){
 
-	      var test = parseInt(input);
-	      // console.log(test);
-	      if (isNaN(test) || test < 1001){
-	        console.log(" Please enter a valid ID number");
-	        return;
-	      }
+			      var test = parseInt(input);
+			      // console.log(test);
+			      if (isNaN(test) || test < 1001){
+			        console.log(" Please enter a valid ID number");
+			        return;
+			      }
 
-	     return true;
-	    } 
-	},
-	{
-		name: "quantity",
-		message: "Amount requested: ",
-		validate: function(input){
+			     return true;
+			    } 
+			},
+			{
+				name: "quantity",
+				message: "Amount requested: ",
+				validate: function(input){
 
-	      var test = parseInt(input);
-	      // console.log(test);
-	      if (isNaN(test)){
-	        console.log(" Please enter a number");
-	        return;
-	      }
+			      var test = parseInt(input);
+			      // console.log(test);
+			      if (isNaN(test)){
+			        console.log(" Please enter a number");
+			        return;
+			      }
 
-	     return true;
-	    } 
-	}
-
-
-]).then(function(answers){
-
-	connection.query("SELECT stock_quantity FROM products WHERE ?",
-		[{item_id: answers.id}], 
-		function(err, res){
-			if (err) throw err;
-			// console.log(res[0].stock_quantity);
-			quantRemaining = res[0].stock_quantity;
-			itemsNumOrdered = parseInt(answers.quantity);
-
-			if (quantRemaining >= itemsNumOrdered){
-
-				newQuant = quantRemaining - itemsNumOrdered;
-				itemIdNumber = answers.id;
-
-				updateStock(newQuant, itemIdNumber, itemsNumOrdered);
-
-				console.log("");
-				console.log("We have that!");
-				console.log("");
+			     return true;
+			    } 
 			}
 
-			else {
 
-				console.log("");
-				console.log("Sorry, we don't have enough :(");
-				console.log("");
-				inquirer.prompt([
-				{
-					name: "repeat",
-					type: "confirm",
-					message: "Would you like to try again?"
-				}
-				]).then(function(answer){
-					// console.log("Answer: " + answer.repeat);
-					if (answer.repeat === true) {
+		]).then(function(answers){
 
-						orderItem();
+			// queries database for stock_quantity column, according to item_id
+			connection.query("SELECT stock_quantity FROM products WHERE ?",
+				[{item_id: answers.id}], 
+
+				function(err, res){
+					if (err) throw err;
+					
+					//assigns new variable to 'stock quantity'(quantity from database) result of the query
+					quantRemaining = res[0].stock_quantity;
+
+					//assigns new variable to answer from inquirer question
+					itemsNumOrdered = parseInt(answers.quantity);
+
+					//if quantity value in database is greater than the amount ordered, the order will proceed
+					if (quantRemaining >= itemsNumOrdered){
+
+						newQuant = quantRemaining - itemsNumOrdered;
+						itemIdNumber = answers.id;
+
+						//Function to update stock is called, passing in appropriate parameters
+						updateStock(newQuant, itemIdNumber, itemsNumOrdered);
+
+						console.log("");
+						console.log("We have that!");
+						console.log("");
 					}
+
+					//if quantity value in database is less than the amount ordered, the order will not go through
 					else {
-						
-						menuAgain();
-					}
-				})
 
-		}
-	})
-})
+						console.log("");
+						console.log("Sorry, we don't have enough :(");
+						console.log("");
+
+						// user will be prompted for other options
+						inquirer.prompt([
+						{
+							name: "repeat",
+							type: "confirm",
+							message: "Would you like to try again?"
+						}
+						]).then(function(answer){
+							
+							if (answer.repeat === true) {
+
+								orderItem();
+							}
+							else {
+								
+								menuAgain();
+							}
+						})
+
+				}
+			})
+		})
 }
 
+///////////////////////////////////////////////////////////////
+// Function updates stock in database after order is placed //
+/////////////////////////////////////////////////////////////
 function updateStock(newQuant, itemIdNumber, itemsNumOrdered) {
 
 	console.log("");
@@ -190,22 +216,30 @@ function updateStock(newQuant, itemIdNumber, itemsNumOrdered) {
 		function(err, res){
 			if (err) throw err;
 
+			// Function to calculate total cost is called, passing in appropriate parameters
 			total(itemsNumOrdered, itemIdNumber);
 			
 		}
 
-		);
+	)
 }
-		
+
+//////////////////////////////////////////////////////////////////////////////
+// Function creates + displays total amt for customer when order is placed //
+////////////////////////////////////////////////////////////////////////////		
 function total(itemsNumOrdered, itemIdNumber) {
 
 	connection.query(
 		"SELECT price FROM products WHERE ?",
 		[{item_id: itemIdNumber}],
+
 		function(err, res){
+
 			if(err) throw err;
+
 			pricePerItem = res[0].price;
 			var total = itemsNumOrdered * pricePerItem;
+
 			console.log("=========");
 			console.log("Your order has been placed!");
 			console.log("Your sales tax is (6.875%): $" + (total*0.06875).toFixed(2));
@@ -214,35 +248,38 @@ function total(itemsNumOrdered, itemIdNumber) {
 			console.log("Thank you for your business!");
 			console.log("");
 
+			//calls function to display menu
 			menuAgain();
-
 		}
-		)
+	)
 }
 
+/////////////////////////////////////////////////
+// Function to display menu with more options //
+///////////////////////////////////////////////
 function menuAgain() {
 
 	inquirer.prompt({
 
-				name: "orderAgain",
-				type: "list",
-				message: "Is there anything else you would like to do?",
-				choices: ["Order another item", "Enter Manager Mode", "Exit"]
-			}).then(function(answer){
+		name: "orderAgain",
+		type: "list",
+		message: "Is there anything else you would like to do?",
+		choices: ["Order another item", "Enter Manager Mode", "Exit"]
+	}).then(function(answer){
 
-				switch(answer.orderAgain){
-					case "Order another item":
-						orderItem();
-						break;
-					case "Enter Manager Mode":
-						managerMode.managerMenu();
-						break;
-					case "Exit":
-						console.log("");
-						console.log("Have a great day!");
-						console.log("");
-						connection.destroy();
-						break;
-				}
-			})
+		switch(answer.orderAgain){
+			case "Order another item":
+				orderItem();
+				break;
+			case "Enter Manager Mode":
+				managerMode.managerMenu();
+				break;
+			case "Exit":
+				console.log("");
+				console.log("Have a great day!");
+				console.log("");
+				connection.destroy();
+				
+		}
+	})
 }

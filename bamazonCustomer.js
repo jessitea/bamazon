@@ -1,5 +1,6 @@
 var inquirer = require("inquirer");
 var mysql = require("mysql");
+var managerMode = require("./bamazonManager.js");
 var quantRemaining;
 var itemsNumOrdered;
 var itemIdNumber;
@@ -17,6 +18,39 @@ var connection = mysql.createConnection({
   database: "bamazon_DB"
 });
 
+console.log("");
+console.log("============================");
+console.log("======== WELCOME TO ========");
+console.log("========= BAMAZON! =========");
+console.log("============================");
+console.log("");
+console.log("");
+console.log("What would you like to do?");
+
+startProgram();
+
+function startProgram() {
+inquirer.prompt(
+	{
+		name: "choice",
+		type: "list",
+		message: "Choose a menu:",
+		choices: ["Customer Order", "Manager View"]
+	}
+).then(function(answers){
+
+	switch(answers.choice){
+		case "Customer Order":
+			customerView();
+			break;
+		case "Manager View":
+			managerMode.managerMenu();
+			break;
+	}
+})
+}
+
+function customerView() {
 // Displays all items in inventory
 connection.query("SELECT * FROM products", function(err, res){
 	if (err) throw err;
@@ -36,9 +70,11 @@ connection.query("SELECT * FROM products", function(err, res){
 		}
 
 		console.log("==== END OF LIST ====");
-	orderItem();
+		orderItem();
 
-});	
+})
+}	
+
 
 
 
@@ -58,7 +94,7 @@ inquirer.prompt([
 
 	      var test = parseInt(input);
 	      // console.log(test);
-	      if (isNaN(test) || test < 1001 || test > 1010){
+	      if (isNaN(test) || test < 1001){
 	        console.log(" Please enter a valid ID number");
 	        return;
 	      }
@@ -91,7 +127,7 @@ inquirer.prompt([
 			if (err) throw err;
 			// console.log(res[0].stock_quantity);
 			quantRemaining = res[0].stock_quantity;
-			itemsNumOrdered = answers.quantity;
+			itemsNumOrdered = parseInt(answers.quantity);
 
 			if (quantRemaining >= itemsNumOrdered){
 
@@ -100,12 +136,16 @@ inquirer.prompt([
 
 				updateStock(newQuant, itemIdNumber, itemsNumOrdered);
 
+				console.log("");
 				console.log("We have that!");
+				console.log("");
 			}
 
 			else {
 
+				console.log("");
 				console.log("Sorry, we don't have enough :(");
+				console.log("");
 				inquirer.prompt([
 				{
 					name: "repeat",
@@ -119,7 +159,8 @@ inquirer.prompt([
 						orderItem();
 					}
 					else {
-						connection.destroy();
+						
+						menuAgain();
 					}
 				})
 
@@ -130,7 +171,9 @@ inquirer.prompt([
 
 function updateStock(newQuant, itemIdNumber, itemsNumOrdered) {
 
+	console.log("");
 	console.log("Checking inventory...");
+	console.log("");
 
 
 	connection.query(
@@ -169,10 +212,37 @@ function total(itemsNumOrdered, itemIdNumber) {
 			console.log("Your total is: $" + (total + (total*0.06875)).toFixed(2));
 			console.log("");
 			console.log("Thank you for your business!");
-			connection.destroy();
+			console.log("");
+
+			menuAgain();
 
 		}
 		)
+}
 
+function menuAgain() {
 
+	inquirer.prompt({
+
+				name: "orderAgain",
+				type: "list",
+				message: "Is there anything else you would like to do?",
+				choices: ["Order another item", "Enter Manager Mode", "Exit"]
+			}).then(function(answer){
+
+				switch(answer.orderAgain){
+					case "Order another item":
+						orderItem();
+						break;
+					case "Enter Manager Mode":
+						managerMode.managerMenu();
+						break;
+					case "Exit":
+						console.log("");
+						console.log("Have a great day!");
+						console.log("");
+						connection.destroy();
+						break;
+				}
+			})
 }

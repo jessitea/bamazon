@@ -51,7 +51,7 @@ module.exports = {
 				case "Exit":
 					console.log("");
 					console.log("Have a great day!");
-					connection.destroy();
+					process.exit(-1);
 					
 			}
 		})

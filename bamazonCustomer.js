@@ -278,7 +278,7 @@ function menuAgain() {
 				console.log("");
 				console.log("Have a great day!");
 				console.log("");
-				connection.destroy();
+				process.exit(-1);
 				
 		}
 	})

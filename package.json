@@ -1,0 +1,23 @@
+{
+  "name": "bamazon",
+  "version": "1.0.0",
+  "description": "A node based program that is a faux ordering and inventory application",
+  "main": "bamazonCustomer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jessitea/bamazon.git"
+  },
+  "author": "JT",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jessitea/bamazon/issues"
+  },
+  "homepage": "https://github.com/jessitea/bamazon#readme",
+  "dependencies": {
+    "inquirer": "^3.1.1",
+    "mysql": "^2.13.0"
+  }
+}
